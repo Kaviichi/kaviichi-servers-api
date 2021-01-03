@@ -1,0 +1,21 @@
+{
+  "name": "kaviichi-servers",
+  "version": "1.0.0",
+  "description": "A game server manager API",
+  "main": "src/server.ts",
+  "scripts": {
+    "build": "rm -rf build/ && prettier --write src/ && tsc"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "@types/body-parser": "^1.19.0",
+    "@types/dotenv": "^8.2.0",
+    "@types/express": "^4.17.9"
+  }
+}

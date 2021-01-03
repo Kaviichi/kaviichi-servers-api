@@ -1,0 +1,13 @@
+
+{
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "[javascript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescript]": {
+      "editor.formatOnSave": true,
+      "editor.formatOnPaste": true
+    },
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true
+  }
