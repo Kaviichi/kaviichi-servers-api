@@ -28,3 +28,4 @@
 Main resources used to create this project.
 
 [Restful API with NodeJS, Express & Typescript](https://www.youtube.com/watch?v=vyz47fUXcxU)
+[Deploy To Google Cloud Run Using Github Actions](https://towardsdatascience.com/deploy-to-google-cloud-run-using-github-actions-590ecf957af0)
