@@ -6,7 +6,22 @@
 
 ### Getting Started
 
-- `npm install`
+- Install packages
+    ```
+    npm install
+    ```
+- Start the server with nodemon
+    ```
+    nodemon src/server.ts
+    ```
+- Run tests
+    ```
+    npm run test
+    ```
+- Build the js files
+    ```
+    npm run build
+    ```
 
 
 ### References
