@@ -5,3 +5,4 @@ This describes technologies used in this project.
     - Cloud Tasks
     - Cloud Functions
     - Cloud Compute
+    - Cloud Run

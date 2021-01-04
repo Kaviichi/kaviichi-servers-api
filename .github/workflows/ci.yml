@@ -1,22 +1,45 @@
 name: CI
 
-on: push
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
 
 jobs:
   build:
 
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [14.x]
-
     steps:
     - name: Checkout Code
       uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version}}
-      uses: actions/setup-node@v1
+
+    - name: Setup Google Cloud CLI
+      uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
       with:
-        node-version: ${{ matrix.node-version}}
-    - name: Build
-      run: npm build
+        service_account_email: ${{ secrets.GCP_EMAIL }}
+        service_account_key: ${{ secrets.GCP_CREDENTIALS }}
+        export_default_credentials: true
+
+    # Configure Docker with Credentials
+    - name: Configure Docker
+      run: |
+        gcloud auth configure-docker
+
+    # Build the Docker image
+    - name: Build & Publish
+      run: |
+        gcloud config set project ${{ secrets.GCP_PROJECT }}
+        gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT }}/${{ secrets.GCP_APPLICATION }}
+        gcloud config set run/region europe-west4
+
+    # Deploy the Docker image to the Cloud Run
+    - name: Deploy
+      run: |
+        gcloud run deploy ${{ secrets.GCP_APPLICATION }} --image gcr.io/${{ secrets.GCP_PROJECT }}/${{ secrets.GCP_APPLICATION }} \
+        --platform managed \
+        --allow-unauthenticated \
+        --memory 512M
