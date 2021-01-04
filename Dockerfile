@@ -6,6 +6,8 @@ COPY package*.json ./
 
 RUN npm install
 
-COPY ./build ./
+COPY . .
 
-CMD [ "node", "server.js" ]
+RUN npm run build
+
+CMD [ "node", "build/server.js" ]
