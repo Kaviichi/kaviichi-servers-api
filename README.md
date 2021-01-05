@@ -23,7 +23,22 @@
     npm run build
     ```
 
+### Secrets
 
+To parse secrets into the development environment, you can either:
+1. Make the secrets an environment variable if building the server with nodemon `npm i -g nodemon` (example for Linux)
+    ```
+    DISCORD_CLIENT_SECRET=the-secret-code
+    nodemon ./src/server.ts
+    ```
+
+or
+
+2. Run the Docker container parsing the secrets at runtime
+    ```
+    docker build . -t kaviichi-servers
+    docker run -p 8080:8080 -e DISCORD_CLIENT_SECRET=the-secret-code kaviichi-servers
+    ```
 ### References
 Main resources used to create this project.
 

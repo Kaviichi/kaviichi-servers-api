@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import logging from './config/logging';
 import config from './config/config';
 import sampleRoutes from './routes/sample';
+import auth from './controllers/authenticator';
 
 const NAMESPACE = 'Server';
 const router = express();
@@ -48,7 +49,7 @@ router.use((req, res, next) => {
 
 /** Routes */
 router.use('/sample', sampleRoutes);
-
+router.use('/auth', auth);
 /** Error Handling */
 router.use((req, res, next) => {
     const error = new Error('not found');
