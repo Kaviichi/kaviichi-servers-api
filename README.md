@@ -26,10 +26,10 @@
 ### Secrets
 
 To parse secrets into the development environment, you can either:
-1. Make the secrets an environment variable if building the server with nodemon `npm i -g nodemon` (example for Linux)
+1. Make the secrets an environment variable if building the server (example for Linux)
     ```
-    DISCORD_CLIENT_SECRET=the-secret-code
-    nodemon ./src/server.ts
+    touch .env && echo "DISCORD_CLIENT_SECRET=the-secret-code" >> .env
+    npm run start
     ```
 
 or

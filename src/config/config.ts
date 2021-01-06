@@ -20,6 +20,10 @@ const config = {
         secret: DISCORD_CLIENT_SECRET,
         api_endpoint: 'https://discord.com/api/v6',
         client_id: '795772814195294228',
+        // TODO: Replace this with a legitimate redirect url
+        redirect_uri: 'http:/localhost:8080/auth/redirect',
+        // Scopes we are requesting authorisation for
+        scopes: 'identify guilds',
     },
 };
 
