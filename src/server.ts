@@ -9,6 +9,14 @@ import auth from './controllers/authenticator';
 const NAMESPACE = 'Server';
 const router = express();
 
+/** Check that secrets are assigned */
+if (config.discord.secret == '' || !config.discord.secret) {
+    const errorMessage =
+        'Secrets have not been assigned. Make sure secrets are available before starting the application.';
+    logging.error(NAMESPACE, errorMessage);
+    throw new Error(errorMessage);
+}
+
 router.use((req, res, next) => {
     logging.info(
         NAMESPACE,

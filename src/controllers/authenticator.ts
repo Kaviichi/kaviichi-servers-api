@@ -1,52 +1,35 @@
 import logging from '../config/logging';
 import config from '../config/config';
 import express from 'express';
-// Imports Axois Types
-const axios = require('axios').default;
+import axios from 'axios';
+import { APIUser, RESTPostOAuth2AccessTokenResult } from 'discord-api-types';
 
 const NAMESPACE = 'Discord Authenticator';
 
 const router = express.Router();
 
-/**NOTES
- * - User attempts authentication
- * - API checks if they are already logged in / have an access token in the database
- * - If they are logged in: refresh access token
- * - If they are not logged in: redirect to auth URL
- * - URL e.g. https://discord.com/api/oauth2/authorize?client_id=795772814195294228&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fauth%2Fredirect&response_type=code&scope=identify%20guilds
- * - User authorises app and is redirected to /redirect
- */
-
 /**Generates access token from Discord API.
- * Should only happen if access token has expired
  * See https://discord.com/developers/docs/topics/oauth2#authorization-code-grant-access-token-exchange-example
  */
 router.get('/redirect', async (req, res, next) => {
-    if (!config.discord.secret) {
-        logging.error(NAMESPACE, 'Discord App Secret has not been set. Discord authentication will fail.');
-        return res.status(500);
-    }
     if (!req.query.code) {
         logging.error(NAMESPACE, 'Attempting authentication without redirect code');
         return res.status(400);
     }
     try {
-        const response = await axios.post(config.discord.api_endpoint + '/oauth2/token', {
-            data: {
-                client_id: config.discord.client_id,
-                client_secret: config.discord.secret,
-                grant_type: 'authorization_code',
-                code: req.query.code,
-                redirect_uri: config.discord.redirect_uri,
-                scope: config.discord.scopes,
-            },
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-        });
+        // Use the redirect token to gain an access token from Discord's API
+        const tokenResponse: RESTPostOAuth2AccessTokenResult = await getAccessToken(req.query.code + '');
+        const accessToken = tokenResponse.access_token;
+        // Retrieve the user's data
+        const userData: APIUser = await getUserData(accessToken);
+        console.log('got res: ', userData.username);
     } catch (error) {
+        if (error.response.data.error_description == 'Invalid "code" in request.') {
+            logging.warn(NAMESPACE, 'A user is attempting to authenticate with an invalid code.');
+            return res.status(400);
+        }
         logging.error('Discord API', error);
-        console.log(error);
+        console.log(JSON.stringify(error.response.data));
         return res.status(500);
     }
     return res.status(200).json({
@@ -54,19 +37,54 @@ router.get('/redirect', async (req, res, next) => {
     });
 });
 
-function refreshAccessToken(refreshToken: string): Promise<any> {
-    return axios.post(config.discord.api_endpoint + '/oauth2/token', {
-        data: {
-            client_id: config.discord.client_id,
-            client_secret: config.discord.secret,
-            grant_type: 'authorization_code',
-            refresh_token: refreshToken,
-            redirect_uri: config.discord.redirect_uri,
-            scope: config.discord.scopes,
-        },
+async function getUserData(token: string): Promise<APIUser> {
+    const headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: 'Bearer ' + token,
+    };
+    const res = await axios.get(config.discord.api_endpoint + '/users/@me', {
+        headers: headers,
+    });
+    return res.data as APIUser;
+}
+
+async function getAccessToken(code: string): Promise<RESTPostOAuth2AccessTokenResult> {
+    const data = {
+        client_id: config.discord.client_id,
+        client_secret: config.discord.secret,
+        grant_type: 'authorization_code',
+        code: code,
+        redirect_uri: config.discord.redirect_uri,
+        scope: config.discord.scopes,
+    };
+    const res = await axios({
+        method: 'post',
+        url: config.discord.api_endpoint + '/oauth2/token',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
+        // Payload must be URLSearchParams not formdata as the content type is form-urlencoded
+        data: new URLSearchParams(data),
     });
+    return res.data as RESTPostOAuth2AccessTokenResult;
 }
+
+async function refreshAccessToken(refreshToken: string): Promise<RESTPostOAuth2AccessTokenResult> {
+    const data = {
+        client_id: config.discord.client_id,
+        client_secret: config.discord.secret,
+        grant_type: 'refresh_token',
+        refreshToken: refreshToken,
+        redirect_uri: config.discord.redirect_uri,
+        scope: config.discord.scopes,
+    };
+    const res = await axios.post(config.discord.api_endpoint + '/oauth2/token', {
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        data: new URLSearchParams(data),
+    });
+    return res.data as RESTPostOAuth2AccessTokenResult;
+}
+
 export = router;
