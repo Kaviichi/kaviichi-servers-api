@@ -31,6 +31,7 @@ const config = {
             'https://discord.com/api/oauth2/authorize?client_id=795772814195294228&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fauth%2Fredirect&response_type=code&scope=identify%20guilds',
     },
     jwt: {
+        // TODO: Generate at runtime?
         secret: JWT_SECRET || '',
     },
 };

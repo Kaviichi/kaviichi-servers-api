@@ -4,6 +4,7 @@ import express from 'express';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { APIUser, RESTPostOAuth2AccessTokenResult } from 'discord-api-types';
+import authenticate from '../middleware/authenticator';
 
 const NAMESPACE = 'Discord Authenticator';
 
@@ -17,6 +18,7 @@ interface JWTData {
     // Token expiration date in milliseconds (epoch)
     exp: number;
 }
+
 /**Redirect the user to grant permissions on Discord,
  * once granted will return to /redirect
  */
@@ -48,16 +50,7 @@ router.get('/redirect', async (req, res) => {
         return res.status(500);
     }
 
-    // One week in milliseconds
-    const week = 604800000;
-    const jwtExpDate = Date.now() + week;
-    const payload: JWTData = {
-        uid: userData.id,
-        token: discordAccessToken,
-        exp: jwtExpDate,
-    };
-    // This token will be used for authenticating and authorisation throughout the API
-    const authToken = jwt.sign(payload, config.jwt.secret);
+    const authToken = generateJWT(userData.id, discordAccessToken);
 
     return res.status(200).json({
         token: authToken,
@@ -67,7 +60,20 @@ router.get('/redirect', async (req, res) => {
 /**The user already has authenticated with us, and would like to re-authenticate for this session
  * Refreshes the JWT and refreshes the Discord Access Token
  */
-router.get('/reauthenticate', (req, res) => {});
+router.get('/reauthenticate', authenticate, (req, res) => {});
+
+function generateJWT(uid: `${bigint}`, accessToken: string) {
+    // One week in milliseconds
+    const week = 604800000;
+    const jwtExpDate = Date.now() + week;
+    const payload: JWTData = {
+        uid: uid,
+        token: accessToken,
+        exp: jwtExpDate,
+    };
+    // This token will be used for authenticating and authorisation throughout the API
+    return jwt.sign(payload, config.jwt.secret);
+}
 
 async function getUserData(token: string): Promise<APIUser> {
     const headers = {

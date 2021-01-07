@@ -3,19 +3,21 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import logging from './config/logging';
 import config from './config/config';
-import sampleRoutes from './routes/sample';
-import auth from './controllers/authenticator';
+import discordAuthRoute from './controllers/discord-auth';
+import serverControllerRoute from './controllers/server-controller';
 
 const NAMESPACE = 'Server';
 const router = express();
 
 /** Check that secrets are assigned */
-if (config.discord.secret == '' || !config.discord.secret) {
+if (config.discord.secret == '' || config.jwt.secret == '') {
     const errorMessage =
         'Secrets have not been assigned. Make sure secrets are available before starting the application.';
     logging.error(NAMESPACE, errorMessage);
     throw new Error(errorMessage);
 }
+
+/** Middleware */
 
 router.use((req, res, next) => {
     logging.info(
@@ -56,8 +58,8 @@ router.use((req, res, next) => {
 });
 
 /** Routes */
-router.use('/sample', sampleRoutes);
-router.use('/auth', auth);
+router.use('/auth', discordAuthRoute);
+router.use('/server', serverControllerRoute);
 /** Error Handling */
 router.use((req, res, next) => {
     const error = new Error('not found');
