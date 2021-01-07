@@ -4,6 +4,7 @@ dotenv.config();
 
 /** SECRETS */
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET;
 
 /** CONFIG WITH DEFAULT VALUES */
 const SERVER_PORT = process.env.PORT || 8080;
@@ -26,6 +27,11 @@ const config = {
         redirect_uri: 'http://localhost:8080/auth/redirect',
         // Scopes we are requesting authorisation for
         scopes: 'identify guilds',
+        discord_auth_url:
+            'https://discord.com/api/oauth2/authorize?client_id=795772814195294228&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fauth%2Fredirect&response_type=code&scope=identify%20guilds',
+    },
+    jwt: {
+        secret: JWT_SECRET || '',
     },
 };
 

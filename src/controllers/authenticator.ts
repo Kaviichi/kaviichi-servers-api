@@ -2,16 +2,32 @@ import logging from '../config/logging';
 import config from '../config/config';
 import express from 'express';
 import axios from 'axios';
+import jwt from 'jsonwebtoken';
 import { APIUser, RESTPostOAuth2AccessTokenResult } from 'discord-api-types';
 
 const NAMESPACE = 'Discord Authenticator';
 
 const router = express.Router();
 
+interface JWTData {
+    // The Discord User ID
+    uid: `${bigint}`;
+    // The Discord Access Token
+    token: string;
+    // Token expiration date in milliseconds (epoch)
+    exp: number;
+}
+/**Redirect the user to grant permissions on Discord,
+ * once granted will return to /redirect
+ */
+router.get('/authenticate', (req, res) => {
+    res.redirect(config.discord.discord_auth_url);
+});
+
 /**Generates access token from Discord API.
  * See https://discord.com/developers/docs/topics/oauth2#authorization-code-grant-access-token-exchange-example
  */
-router.get('/redirect', async (req, res, next) => {
+router.get('/redirect', async (req, res) => {
     if (!req.query.code) {
         logging.error(NAMESPACE, 'Attempting authentication without redirect code');
         return res.status(400);
@@ -19,10 +35,9 @@ router.get('/redirect', async (req, res, next) => {
     try {
         // Use the redirect token to gain an access token from Discord's API
         const tokenResponse: RESTPostOAuth2AccessTokenResult = await getAccessToken(req.query.code + '');
-        const accessToken = tokenResponse.access_token;
-        // Retrieve the user's data
-        const userData: APIUser = await getUserData(accessToken);
-        console.log('got res: ', userData.username);
+        var discordAccessToken = tokenResponse.access_token;
+        // Retrieve the user's data for our own JWT
+        var userData: APIUser = await getUserData(discordAccessToken);
     } catch (error) {
         if (error.response.data.error_description == 'Invalid "code" in request.') {
             logging.warn(NAMESPACE, 'A user is attempting to authenticate with an invalid code.');
@@ -32,10 +47,27 @@ router.get('/redirect', async (req, res, next) => {
         console.log(JSON.stringify(error.response.data));
         return res.status(500);
     }
+
+    // One week in milliseconds
+    const week = 604800000;
+    const jwtExpDate = Date.now() + week;
+    const payload: JWTData = {
+        uid: userData.id,
+        token: discordAccessToken,
+        exp: jwtExpDate,
+    };
+    // This token will be used for authenticating and authorisation throughout the API
+    const authToken = jwt.sign(payload, config.jwt.secret);
+
     return res.status(200).json({
-        message: 'authenticator',
+        token: authToken,
     });
 });
+
+/**The user already has authenticated with us, and would like to re-authenticate for this session
+ * Refreshes the JWT and refreshes the Discord Access Token
+ */
+router.get('/reauthenticate', (req, res) => {});
 
 async function getUserData(token: string): Promise<APIUser> {
     const headers = {
