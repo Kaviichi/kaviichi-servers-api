@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import config from '../config/config';
 import logging from '../config/logging';
+import { JWTData } from '../typings/jwt-data';
 
 const NAMESPACE = 'Authenticator';
 
@@ -20,12 +21,18 @@ const authenticate = (req: Request, res: Response, next: NextFunction) => {
     jwt.verify(token, config.jwt.secret, (err, decoded) => {
         if (err || !decoded) {
             logging.warn(NAMESPACE, 'Client failed authentication with invalid JWT.');
-            return res.status(400).json({
-                message: 'Invalid JWT',
-            });
+            return res.redirect('/auth/authenticate');
         }
+        const data = decoded as JWTData;
         logging.info(NAMESPACE, 'decoded:' + JSON.stringify(decoded));
-        next();
+
+        // Check if the token has expired
+        if (data.exp > Date.now()) {
+            logging.info(NAMESPACE, 'Token has expired');
+            return res.redirect('/auth/authenticate');
+        } else {
+            next();
+        }
     });
 };
 

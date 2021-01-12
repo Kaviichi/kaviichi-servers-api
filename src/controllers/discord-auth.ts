@@ -5,19 +5,11 @@ import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { APIUser, RESTPostOAuth2AccessTokenResult } from 'discord-api-types';
 import authenticate from '../middleware/authenticator';
+import { JWTData } from '../typings/jwt-data';
 
 const NAMESPACE = 'Discord Authenticator';
 
 const router = express.Router();
-
-interface JWTData {
-    // The Discord User ID
-    uid: `${bigint}`;
-    // The Discord Access Token
-    token: string;
-    // Token expiration date in milliseconds (epoch)
-    exp: number;
-}
 
 /**Redirect the user to grant permissions on Discord,
  * once granted will return to /redirect
